@@ -1,0 +1,113 @@
+Create a application pacakges 
+Packages is just a directory inside this enrollment project
+
+1. Make a directory calls "applicaiton" (Or any actual app name)
+WHy? Becaue you don't want to put all the files in the same dir
+
+2. We will modify this main.py module to link all the files inside this app folder
+It's very comman structture. (Loading all the files from other dir)
+
+3. Create __init__.py
+this is initial file. It's like a default(index) file that 
+Eventually we will move the app module(app object into this file)
+
+4. Make template folder
+This is house for our templates like html  templates basically
+
+5. Make Static folder
+This is to save all the static data like images, video, audio, js file, css ..
+which isn ot generated dynamically
+
+6. Now, we need to know where to start. In this case, it's main.py
+Where can we find ? in .flaskenv
+
+7. Make main.py to import app from application folder
+
+8. flask run
+
+
+----
+
+1. Create config.py module
+
+Create a config class
+why the author likes to do htis? because we can access all these properties through classical config.
+
+#special key that is used as a signature key
+'''to make sure that anything you sent across the server is not the altered or been hacked by hackers
+For example, when you set cookies, possibly those cookie files might have been altered.
+so with this key, we can make sure cookie is made by applicatin
+secret_string will be hashed
+'''
+
+
+2. Create routes.py module
+Why do we need this?
+Cause we don't want to put all the routing info in _init. py
+Move all the routing info to routes.py
+So we need to import app in routes.py, and to run the app, we need to import routes to init file.
+It's like loop. So to not make it circulate, you should import app after 'app = Flask' 
+
+'''
+Called Decorater
+What do they decorate?
+Decorate the underlying functions
+functions can be anything! usually index or home or default
+'''
+--------------
+
+1. Creating the template for the home page (index.html)
+Why? To sepearte the template from the code.
+
+2. Importing the render_template function
+- Add 'from flask import render_template' in routes.py
+- Change <h1>hello world </h1> into return render_template("index.html")
+- Go to template folder and create the index.html file
+- In this course, copy and paste the existign resources (static(images, css ) & templates)
+- Change the path of some files in index.html
+- Make include folder under templates folder
+- Make footer.html file
+- Move the footer part from index html to footer.tml and include footerhtml in index.html
+
+
+3. Using jinja template expression
+
+
+4. Using the include directive to include external files
+
+
+--------------
+
+1. creating navigation menus
+- copy the nav.html and paste to includes folder
+- Include the nav.html in index.html
+- Now, we don't want to show 'Already registered? Login' message when user has been logged in Already
+- in index.html file, add code block. 
+            {% if login %}
+            <h3>Let's get started.</h3>
+            {% else %}
+            <p>Already registered? <a href='login.html'>Login</a></p>
+            {$ end %}    
+- And go to routes.py and add more parameteres in render_template
+@app.route("/index")
+def index():
+    return render_template("index.html", login=True) //Why true? It's test so just assume its true
+
+- And then, if you just use the each templates name in nav.html, inefficient
+- So we will do is use functions in routes.py cause it always load the right templates
+            <ul class="nav nav-pills">
+                <li class="nav-item"><a href="{{ url_for('index') }}" class="nav-link active">Home</a></li>
+                <li class="nav-item"><a href="{{ url_for('courses') }}" class="nav-link">Classes</a></li>
+                <li class="nav-item"><a href="{{ url_for('register') }}" class="nav-link">Register</a></li>
+                <li class="nav-item"><a href="{{ url_for('login') }}" class="nav-link">Login</a></li>
+            </ul>
+
+- and now we create functions for course and register and login
+
+
+2. Using url_for function to resolve links
+
+3. Using the route() decorator to bind a function to one or more URL patterns
+
+4. Jinja delimiters
+the statements, expressions and the comments

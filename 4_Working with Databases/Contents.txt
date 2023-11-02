@@ -1,0 +1,195 @@
+1. Installing the MongoDB database system
+- Check if your machine has mongo DB
+> mongo --version || mongod --version
+
+Or check Cdrive and check if there is MongoDB
+
+
+- Install Mongo DB 
+https://www.mongodb.com
+
+Select MongoDB Community SErver and download it.
+https://www.mongodb.com/try/download/community-kubernetes-operator
+
+OR if you use mac,
+Install MongoDB in here
+https://www.mongodb.com/docs/manual/tutorial/install-mongodb-on-os-x/
+and install Mongo DB compass(UI)
+in 
+https://www.mongodb.com/try/download/compass
+
+Also download MongodB commandline db tools
+https://www.mongodb.com/try/download/database-tools
+and move files in bin foler to /usr/local/mongodb-database-tools-macos-arm64-100.8.0/bin
+
+and set path = /usr/local/mongodb-database-tools-macos-arm64-100.8.0/bin
+
+
+
+2. Installign the MongoEngine extension for Flask
+> pip install flask-mongoengine
+
+3. Setting up the database
+- before this, WE should fix the static folder path problem for courses page.
+go to layout.html
+
+Change into this
+<link rel="stylesheet" href="{{  url_for('static', filename='css/main.css')  }}"/>
+
+- And to fix page adjustable,
+in main.css
+.bottom-container {
+    background: #333;
+    padding:5px;
+    border-top:2px solid #0f0f0f;
+    /*position:absolute;*/
+    bottom:0;
+}
+
+change position to comment
+
+
+4. Conencting to the database
+-Setup our databae
+
+In config.py, add
+
+    MONGODB_SETTINGS = {
+        'db' : 'UTA_Enrollment',
+        'host' : 'mongodb://localhost:27017/UTA_Enrollment'
+    }
+
+
+
+in init.py, import config & flask_mongoengine
+
+from config import Config
+from flask_mongoengine import MongoEngine
+
+and add
+app.config.from_object(Config)
+
+
+//We pass the Config class to that object.
+So now, everything that we run this app, It's gonna load the configuration file,
+and it set up the secret key & DB settings as well
+
+db = MongoEngine()
+db.init_app(app)
+//initiate DB engine for app
+
+
+Now let's make the sampel database and connection
+
+in routes.py,
+We need to create a class called "user" that will map directly to that collection/table we created inside the DB
+
+So first, we import db
+> from application import app, db
+
+and then, add
+class User(db.Document):
+    user_id = db.IntField(unique = True)
+    first_name = db.StringField( max_length=50 )
+    last_name = db.StringField( max_length=50 )
+    email = db.StringField( max_length=30 )
+    password = db.StringField( max_length=30 )
+
+
+//Document object, It's gonna allow us to use the WTF form directives to create those fields like string field, text ..
+so helpful
+
+//   user_id = db.IntField(unique = True)
+Make ID for the USER, integer field, 
+user_id = db.IntField() If you leave like this, this size will be default
+and also since It's unique, we add unique = True
+
+
+and now, we need to create the route for this user so that we can run and display on the browser
+@app.route("/user")
+def user():
+    User(user_id=1, first_name="Hyeyoung", last_name="Kim", email="hyeyokim@cisco.com").save()
+    User(user_id=2, first_name="Lucia", last_name="Kim", email="hyeyokim@cisco.com").save()
+    users = User.objects.all()
+    return render_template("users.html", users=users)
+
+This is one time usage cause It needs unique ID. 
+don't forget to save() data.
+users = Users.objects.all() // retrieve all the data from DB
+and let's make users.html
+
+
+copy index.html and make users.html
+            {% for user in users %}
+            <dl>
+                <dt>User ID : {{ user.user_id }}</dt>
+                <dd>Email : {{ user.email }}</dd>
+                <dd>Password : {{user.password }}</dd>
+            </dl>
+            {% else %}
+                <h3>No users yet!</h3>
+            {% endfor %}
+
+//We loop all the users.
+and if we don't have any,  We show No users yet!
+
+
+- Connecting to the MongoDB via the MongoEngine object
+- Hooking up a user collection using a simple user model class
+- Inserting sample user document (data) to a collection
+- Displaying the collection to the view just to make sure everythin is working as we expect
+
+5. creating documents and data
+
+- Creating collections to store documents/data
+- Inserting documents into our collections using the MongoDB shell commands
+some methods:
+db.createCollection(<collection>) 
+//To create collection
+
+//Insert data to collection in two ways
+db.<collection>.insert({...})
+// allows you to insert singe way or many
+db.<collection>.insert({...})
+// insert many
+
+- Inserting JSON data using the mongoimport.exe via command line
+If you have series of data with Json format, then you want to use mongo import executable file
+to run and import that directly into the database
+>mongoimport -db <DB> -collection <collection> --file <file>
+>mongoimprot -d <DB> -c <collection> --file <file>
+
+
+
+- Okay so first, WE make two collections within MongoDB compass (Enrollment & Course)
+- and then, get the courses.json & users.json and import them!
+> mongoimport --jsonArray --db UTA_Enrollment --collection user --file users.json
+> mongoimport --jsonArray --db UTA_Enrollment --collection course --file courses.json
+
+then they are imported to DB.
+and Enrollment table is injuction tabe to combine or to join the course and the user table
+
+
+Let's create Data Models!
+- Create the models module
+What we will do is move the class User in routes.py to Model module!
+
+
+- Create the User model
+- Create the Course model
+- Create the Enrollment model
+//Enrollment table is like junction table
+When a user is enrolled in a course, then we will store a course_id and user_id 
+information can be queried from both tables.
+many to many relationship between two tables
+and to do that, you need to have a third table
+which is junction table that combine them together.
+and then, when we query later,we can do the join statement to query the data back to show which course or courses the student is enrolled
+That means one student can enroll in many courses, and vice versa
+That's why it's manytomany relationship
+
+
+Now we import this models to routes.py
+In routes.py,
+add
+from application.models import User, Course, Enrollment

@@ -1,0 +1,934 @@
+- Install & configure Flask-WTF and Flask-Security extensions
+- Creating the login and registration pages
+- Processing form data and updating the database
+- Creating the courses and enrollment pages
+- Creating sessions and authentication
+
+
+
+---------
+- Flask-WTF is an extension for the WTForms library
+- WTForms provides a clean way to generate HTML form fields
+So, you don't have to do a lot of coding if you use this module
+- Maintain a separation of code and presentation
+THis is similar to something called MVC
+MVC : you sepearte the code from the view and also from  the controller so this is a example of that.
+e.g.
+
+WTForms
+<form>
+    {{form.hidden.tag()}}
+    {{form.username}}
+    {{form.email}}
+    {{form.password}}
+</form>
+
+> This is in the Jinja's template system
+so you basically issue a command using the dot notation to this form template here ,
+and then the WTForm extension will process these, apart these and then render this into the browser
+and you will see somthing like that in its finished state
+so you can see that that's very very handy
+
+//form.hidden.tag()
+> allogs you to generate something like this
+
+<input id = "csrf_token"
+    type = "hidden"
+    name = "csrf_token"
+    value = "ImFmM.....GU4Yjkw">
+
+which is called a CSRF token(stands for Cross site request forging)
+allows you to make sure that the form that you are submitting to your site is very secure
+It comes from your form and your form only
+Just to verify your site, that it's coming from your form
+SO you will see that there is a value(long string of hash key valeu) 
+SO you can use that to validate and flask use that extensively in web forms and also for user authentication
+
+
+<Flask-Security extension>
+- Provides common security and authentication features
+    -Session-based authentication
+    -Password Hashing
+    -Basic HTTP and token-based authentications
+    -user registration
+    -login tracking
+        // which is another extension called the flask-login
+        //Come with this security extension
+- Support data consistency for Flask-Alchemy, Flask-Mongo Engine, flaks-peewee, ponyORM..
+
+
+<Installation of Flask WTF extension>
+> pip install flask-wtf
+
+<installation of Flask-security>
+> pip install flask-security
+
+ - now we will prepare forms of modules
+ so eventually we wil have all these forms inside its module lke a login form, registration forms, and other forms in there
+
+so under application directory, make a new file called "forms.py"
+and import some libraries
+
+
+from flask_wtf import FlaskForm
+from wtforms import StringField, PasswordField, BooleanField
+from wtforms.validators import DataRequired
+------------------
+Creating the login and registration pages
+Creating form classes and updating the templates using WTForms library
+Creating alert messages using the flask() methods
+Validating forms and showing error messages via form
+
+
+- Creating the login and registration pages
+
+In forms.py,
+
+class LoginForm(FlaskForm):
+    email = StringField("Email", validators=[DataRequired()])
+    password = StringField("Password", validators=[DataRequired()])
+    remember_me = BooleanField("Remember Me")
+    Submit = SubmitField("Login")
+
+First class is login form, and we will pass "FlaskForm"
+We will validate and process out the data
+We want to validate this email, Just make sure that It is required.
+You can do  that by validators=[DataRequired()] (other things might be like the length of the charactors, mask patterns ,...)
+
+It's very common to have a little chat box and remmberme you see the all the times in every form
+IT's a chat box so boollean type
+Submit button = SubmitField()
+//It has it's own field. Why? ITs a button. It's  tied/bind to a function later on so we will call function
+
+class RegisterForm(FlaskForm):
+    email = StringField("Email", validators=[DataRequired()])
+    password = StringField("Password", validators=[DataRequired()])
+    password_confirm = StringField("Confirme Password", validators=[DataRequired()])
+    first_name = StringField("First Name", validators=[DataRequired()])
+    last_name = StringField("Last Name", validators=[DataRequired()])
+    submit = SubmitField("Register Now")
+
+
+class RegisterForm(FlaskForm):
+//This is for user registration form
+
+password
+//When we register the password, there will 2 password, and you want to validate both of them
+ 
+[Updating Login Route and Login Template]
+1 We will update the login route to capture form data
+
+in Routes.py
+
+Original Code:
+@app.route("/login")
+def login():
+    return render_template("login.html", login = True)
+
+
+> @app.route("/login", methods = ['GET','POST'])
+//first thing is login form here. So login, as you can see, We are going to pass that form object to the login form here
+To do that, We need to include the method of GET and POST
+
+> form = LoginForm()
+//and then add variable called form
+this form will be assigned to instance of the login form we just created
+
+>    return render_template("login.html", form=form, login = True)
+//We will pass this template throughout the form in here
+
+>    return render_template("login.html", title="Login", form=form, login = True)
+//in Login.html,
+
+    {% block content %}
+    <h1>Login</h1>
+
+We did some hard coding here, but we can replace this "Login" by using variable so that we can pass the value from routes.py
+So, add title = "Login"
+and add
+> from application.forms import LoginForm, RegisterForm
+
+now, Let's change the login form
+So all the hard code in login.html will be going to a php file
+
+    {% extends "layout.html" %}
+   
+    {% block content %}
+    <h1>Login</h1>
+
+    <div class="row">
+        <div class="col-md-6 offset-md-3">
+            <h3></h3>
+            <form name="login" action="login.php" method="get">
+                <label for="username"><b>Username</b></label>
+                <input type="text" placeholder="Enter Username" name="username" required>
+                <br>
+                <label for="password"><b>Password</b></label>
+                <input type="password" placeholder="Enter Password" name="password" required>
+                <br class="clear">
+                <input class="btn-submit" type="submit" name="submit" value="Login">
+            </form>
+        </div>
+    </div>
+ {% endblock %}
+
+
+//we will chance all of this with WTFforms syntax functions provided by library
+
+
+{% extends "layout.html" %}
+   
+    {% block content %}
+    <h1>{{title}}</h1>
+
+    <div class="row">
+        <div class="col-md-6 offset-md-3">
+            <h3></h3>
+            <form name="login" action="" method="post">
+                {{ form.hidden_tag() }}
+
+                <p>
+                    {{ form.email.label }}<br>
+                    {{ form.email(size=35) }}
+                </p>
+                <p>
+                    {{ form.password.label }}<br>
+                    {{ form.password(size=15) }}
+                </p>
+                <p>
+                    {{ form.submit() }}
+                </p>
+            </form>
+        </div>
+    </div>
+ {% endblock %}
+
+ //{{form.}}
+ is the form that has been passed from routes.py
+ // size=35
+ If it exceeds the size, It occurs the error
+
+ //form.submt()
+ this is function call
+
+[Flashing messages from source to the view]
+- Create alert messages alert messages using flash() method (source)
+- Retrieving flash messages using the get_flashed_messages() (view)
+
+
+We are going to process this input form,
+so when you click t he submit button, It's gonna comback to itself and you need to validate that form.
+
+go routes.py
+original : 
+@app.route("/login", methods = ['GET','POST'])
+def login():
+    form = LoginForm()
+    return render_template("login.html", title="Login", form=form, login = True)
+
+before we submit the return, we can say
+@app.route("/login", methods = ['GET','POST'])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        //It means If the submit really returns no errors (If It is fine)
+            flash("You are successfully logged in!")
+            //We pass message to the page.
+            //and once It's done, we want to redirect the user to the homepage
+            return redirect("/index")
+            //We also have to import the redirect and flash
+            // from flask import render_template,...,redirect, flash
+    return render_template("login.html", title="Login", form=form, login = True)
+
+Next, Let's go to the layout,
+WE need to put the messages in the every layout so that It''s on the top of every message
+because that canbe shared by across all sites.
+
+<div class="container">
+    {% include "includes/nav.html" %}
+
+    {% block content %}
+
+    {% endblock %}
+
+</div>
+
+to
+
+
+<div class="container">
+    {% include "includes/nav.html" %}
+
+    { % with messages = get_flashed_messages() %}
+    //This with is to call the messages whcih come to this page
+    //This will be come with array
+        {% if messages % }
+            {% for message in messages % }
+                <div class="alert alert-danger">
+                    <p>{{ message }}</p>
+                </div>
+            {% endfor %}
+        {% endif % }
+
+    { % endwith % }
+    {% block content %}
+
+    {% endblock %}
+    
+</div>
+
+
+GO to routes.py
+
+so when we submit the form, and when we have error, TI's gonna throw the message
+How do we simulate that?
+typically, you will process the form to the DB to make sure its in DB.
+IF not, you can say "your email is not found" or something llike that
+
+SO before we submit the form, before we say "you are successfully logged in",
+
+from this
+@app.route("/login", methods = ['GET','POST'])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        flash("You are successfully logged in!")
+        return redirect("/index")
+    return render_template("login.html", title="Login", form=form, login = True)
+
+
+to this
+@app.route("/login", methods = ['GET','POST'])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        if request.form.get("email") == "test@uta.com":
+            flash("You are successfully logged in!")
+            return redirect("/index")
+        else:
+            flash("Sorry, Something went wrong.")
+    return render_template("login.html", title="Login", form=form, login = True)
+
+LE'ts fix the color of flash message
+
+in routes.py
+from 
+@app.route("/login", methods = ['GET','POST'])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        if request.form.get("email") == "test@uta.com":
+            flash("You are successfully logged in!")
+            return redirect("/index")
+        else:
+            flash("Sorry, Something went wrong.")
+    return render_template("login.html", title="Login", form=form, login = True)
+to
+
+@app.route("/login", methods = ['GET','POST'])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        if request.form.get("email") == "test@uta.com":
+            flash("You are successfully logged in!", "success") //category object
+            return redirect("/index")
+        else:
+            flash("Sorry, Something went wrong.", "danger")
+    return render_template("login.html", title="Login", form=form, login = True)
+
+
+and in layout.html,
+from
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-danger">
+                    <p>{{ message }}</p>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+    {% endwith %}
+
+
+to
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{category}}"> //and put vairalbe here
+                    <p>{{ message }}</p>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+    {% endwith %}
+
+
+[Displaying form validation error messages]
+- validating form data
+- Showing inline error messages for form fileds
+- Styling and formatting error messages
+
+
+SO when we login to the form in login.html,We also wanna put some errors
+eg) If you don't have enough character size, or If it's empty, ....
+
+
+in login.html
+{% extends "layout.html" %}
+   
+    {% block content %}
+    <h1>{{title}}</h1>
+
+    <div class="row">
+        <div class="col-md-6 offset-md-3">
+            <h3></h3>
+            <form name="login" action="" method="post">
+                {{ form.hidden_tag() }}
+
+                <p>
+                    {{ form.email.label }}<br>
+                    {{ form.email(size=35) }}
+                </p>
+                <p>
+                    {{ form.password.label }}<br>
+                    {{ form.password(size=15) }}
+                </p>
+                <p>
+                    {{ form.submit() }}
+                </p>
+            </form>
+        </div>
+    </div>
+ {% endblock %}
+
+
+ to 
+
+ {% extends "layout.html" %}
+   
+    {% block content %}
+    <h1>{{title}}</h1>
+
+    <div class="row">
+        <div class="col-md-6 offset-md-3">
+            <h3></h3>
+            <form name="login" action="" method="post" novalidate>
+                {{ form.hidden_tag() }}
+
+                <p>
+                    {{ form.email.label }}<br>
+                    {{ form.email(size=35) }}
+                    {% for form.email.erros %}
+                        <span class="error-message">{{error}}</span>
+                        //if there is a error, IT's gonna shown here
+                    {% endif %}
+                </p>
+                <p>
+                    {{ form.password.label }}<br>
+                    {{ form.password(size=15) }}
+                    {% for form.password.erros %}
+                        <span class="error-message">{{error}}</span>
+                        //if there is a error, IT's gonna shown here
+                    {% endif %}
+                </p>
+                <p>
+                    {{ form.submit() }}
+                </p>
+            </form>
+        </div>
+    </div>
+ {% endblock %}
+
+
+
+
+
+ Last thing we will do is change it to RED
+
+ go to main.css and add this
+.error-message{
+    color : red;
+}
+
+
+User registration form is very similar.
+
+
+[Processign Form data and updating the database]
+- Form data validation
+- Processing form data for database update
+- Hashing password using Werkzeug library (a WSGI web app lib)
+//Werkzeug has two import functions
+1. hash the paswords
+2. decrypt or hash it back
+
+in models.py
+
+
+from 
+
+import flask
+from application import db
+from werkzeug.security import generate_password_hash, check_password_hash
+
+class User(db.Document):
+    user_id = db.IntField(unique=True)
+    first_name = db.StringField( max_length=50 )
+    last_name = db.StringField( max_length=50 )
+    email = db.StringField( max_length=30)
+    password = db.StringField( max_length=30 )
+
+class Course(db.Document):
+    course_id = db.StringField( max_length=10, unique=True )
+    title = db.StringField( max_length=100 )
+    description = db.StringField( max_length=100 )
+    credits = db.IntField()
+    term = db.StringField( max_length=25 )
+
+
+class Enrollment(db.Document):
+    user_id = db.IntField()
+    course_id = db.StringField(max_length=10)
+
+
+TO
+
+import flask
+from application import db
+from werkzeug.security import generate_password_hash, check_password_hash
+//generage_password-has : for hash it
+//check_password_hash : to unhash it
+
+class User(db.Document):
+    user_id = db.IntField(unique=True)
+    first_name = db.StringField( max_length=50 )
+    last_name = db.StringField( max_length=50 )
+    email = db.StringField( max_length=30, unique=True )
+    password = db.StringField() //max length not gonna work cause generate_password_hash will generate you  a128 character long paswords
+
+    def set_password(self, password):
+        self.password = generate_password_hash(password)
+
+    def get_password(self, password):
+        return check_password_hash(self.password, password)
+
+    //These are setter and getter for your class
+    //set will hash, get will unhash and compare to the pasword in class and return
+
+class Course(db.Document):
+    course_id = db.StringField( max_length=10, unique=True )
+    title = db.StringField( max_length=100 )
+    description = db.StringField( max_length=100 )
+    credits = db.IntField()
+    term = db.StringField( max_length=25 )
+
+
+class Enrollment(db.Document):
+    user_id = db.IntField()
+    course_id = db.StringField(max_length=10)
+
+
+
+in forms,
+from flask_wtf import FlaskForm
+from wtforms import StringField, PasswordField, BooleanField, SubmitField
+from wtforms.validators import DataRequired
+
+
+class LoginForm(FlaskForm):
+    email = StringField("Email", validators=[DataRequired()])
+    password = StringField("Password", validators=[DataRequired()])
+    remember_me = BooleanField("Remember Me")
+    submit = SubmitField("Login")
+
+class RegisterForm(FlaskForm):
+    email = StringField("Email", validators=[DataRequired()])
+    password = StringField("Password", validators=[DataRequired()])
+    password_confirm = StringField("Confirme Password", validators=[DataRequired()])
+    first_name = StringField("First Name", validators=[DataRequired()])
+    last_name = StringField("Last Name", validators=[DataRequired()])
+    submit = SubmitField("Register Now")
+
+
+
+to
+
+
+from flask_wtf import FlaskForm
+from wtforms import StringField, PasswordField, BooleanField, SubmitField
+from wtforms.validators import DataRequired, Email, Length, EqualTo, ValidationError
+from application.models import User
+
+
+class LoginForm(FlaskForm):
+    email = StringField("Email", validators=[DataRequired(), Email()])
+    #Make sure that these are valid email addrs format
+    password = StringField("Password", validators=[DataRequired(), Length(min=6, max=15)])
+    #Make sure that password meets the specific length
+    remember_me = BooleanField("Remember Me")
+    submit = SubmitField("Login")
+
+class RegisterForm(FlaskForm):
+    email = StringField("Email", validators=[DataRequired(), Email()])
+    password = StringField("Password", validators=[DataRequired(), Length(min=6, max=15)])
+    password_confirm = StringField("Confirme Password", validators=[DataRequired(), Length(min=6, max=15), EqualTo('password')])
+    #equalt to password > password confirm should be equal to password above
+    first_name = StringField("First Name", validators=[DataRequired(), Length(min=2, max=55)])
+    last_name = StringField("Last Name", validators=[DataRequired(), Length(min=2, max=55)])
+    submit = SubmitField("Register Now")
+
+    def validate_email(self, email):
+        user = User.objects(email=email.data).first()
+        if user:
+            raise ValidationError("Email is already in use. Pick another one.")
+    # THis function makes sure that emaill matches to the email = StringFie... here
+    # SO whenver call it, It has to be  the same filed name
+    # Its also case sensitive
+    # USer class which is imported
+    #Object now recall the actual database call, you check the email inside the database,
+    #and grab the first occurence
+    # SO if it user is true, IT means email is already existed in DB
+    # so raise the error
+
+
+
+> email, equato, vallidation ERrror : you can validate your form before you even start processing the data
+>so forexample, when you process the form, in routes> def login()> form.validate_on_submit(),
+It will validate the form when yo ucall this func so IT's before you even go inside the part here
+
+
+In login.html
+
+{% extends "layout.html" %}
+   
+    {% block content %}
+    <h1>{{title}}</h1>
+
+    <div class="row">
+        <div class="col-md-6 offset-md-3">
+            <h3></h3>
+            <form name="login" action="" method="post" novalidate>
+                {{ form.hidden_tag() }}
+
+                <p>
+                    {{ form.email.label }}<br>
+                    {{ form.email(size=35) }}
+                    {% for error in form.email.errors %}
+                        <span class="error-message">{{ error }}</span>
+                    {% endfor %}
+                </p>
+                <p>
+                    {{ form.password.label }}<br>
+                    {{ form.password(size=15) }}
+                    {% for error in form.password.errors %}
+                        <span class="error-message">{{ error }}</span>
+                    {% endfor %}
+                </p>
+                <p>
+                    {{ form.submit() }}
+                </p>
+            </form>
+        </div>
+    </div>
+ {% endblock %}
+
+ to
+ {% extends "layout.html" %}
+   
+    {% block content %}
+
+    <div class="row">
+        <div class="col-md-6 offset-md-3">
+            <h3></h3>
+            <form name="login" action="" method="post" novalidate>
+                <fieldset class="form-group">
+                <legend>{{title}}</legend>
+                {{ form.hidden_tag() }}
+
+                <p>
+                    {{ form.email.label }}<br>
+                    {{ form.email(size=35) }}
+                    {% for error in form.email.errors %}
+                        <span class="error-message">{{ error }}</span>
+                    {% endfor %}
+                </p>
+                <p>
+                    {{ form.password.label }}<br>
+                    {{ form.password(size=15) }}
+                    {% for error in form.password.errors %}
+                        <span class="error-message">{{ error }}</span>
+                    {% endfor %}
+                </p>
+                <p>
+                    {{ form.submit() }}
+                </p>
+            </form>
+        </div>
+    </div>
+ {% endblock %}
+
+
+
+ In register.html
+
+ 
+    {% extends "layout.html" %}
+   
+    {% block content %}
+    <h2>New User Registration</h2>
+
+    <div class="container">
+        <form name="register" action="register.php" method="get">
+            <label for="username"><b>Username</b></label>
+            <input type="text" placeholder="Enter Username" name="username" required>
+            <br>
+            <label for="email"><b>Email</b></label>
+            <input type="text" placeholder="Enter Email" name="email" required>
+            <br>
+            <label for="password"><b>Password</b></label>
+            <input type="password" placeholder="Enter Password" name="password" required>
+            <br class="clear">
+            <input class="btn-submit" type="submit" name="submit">
+        </form>
+    </div>
+    {% endblock %}
+
+
+
+
+    to
+
+
+
+    
+    {% extends "layout.html" %}
+   
+    {% block content %}
+    
+    <div class="container">
+         <form name="login" action="" method="post" novalidate>
+        <fieldset class="form-group">
+            <legend>{{title}}</legend>     
+            {{ form.hidden_tag() }}       
+                <p> {{ form.email.label }}</br>
+                    {{ form.email }}
+                    {% for error in form.email.errors %}
+                     <span class="error-message">{{ error }}</span>
+                    {% endfor %}
+                </p>
+            
+                <p> {{ form.password.label }}</br>
+                    {{ form.password }}
+                    {% for error in form.password.errors %}
+                     <span class="error-message">{{ error }}</span>
+                    {% endfor %}
+                </p>
+            
+                <p> {{ form.password_confirm.label }}</br>
+                    {{ form.password_confirm }}
+                    {% for error in form.password_confirm.errors %}
+                     <span class="error-message">{{ error }}</span>
+                    {% endfor %}
+                </p>
+            
+                <p> {{ form.first_name.label }}</br>
+                    {{ form.first_name }}
+                    {% for error in form.first_name.errors %}
+                     <span class="error-message">{{ error }}</span>
+                    {% endfor %}
+                </p>
+            
+                <p> {{ form.last_name.label }}</br>
+                    {{ form.last_name }}
+                    {% for error in form.last_name.errors %}
+                     <span class="error-message">{{ error }}</span>
+                    {% endfor %}
+                </p>
+            
+                <p> 
+                    {{ form.submit() }}
+                </p>
+            
+        </fieldset>
+        </form>
+    </div>
+    {% endblock %}
+
+
+
+[Update the login route to interact with database]
+- Forn data validation
+- Validatibg email addresses
+- Hashing password using WErkzuel lib 
+
+
+We will match the user in DB when user try to login.
+
+routes.py
+
+@app.route("/login", methods = ['GET','POST'])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        if request.form.get("email") == "test@uta.com":
+            flash("You are successfully logged in!", "success")
+            return redirect("/index")
+        else:
+            flash("Sorry, Something went wrong.", "danger")
+    return render_template("login.html", title="Login", form=form, login = True)
+
+
+to
+
+
+@app.route("/login", methods = ['GET','POST'])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        email = form.email.data
+        password = form.password.data
+        user = user.objects(email=email).first()
+        if user and password == user.password:
+            flash(f"{user.first_name},You are successfully logged in!", "success")
+            return redirect("/index")
+        else:
+            flash("Sorry, Something went wrong.", "danger")
+    return render_template("login.html", title="Login", form=form, login = True)
+
+
+
+Now We need to hash it now.
+We wikl call the hash funcion to encrypt/decrypt
+all the pw in DB will not work anymore cause they were not originally hasehd.
+SO let's use the fnction in models.py
+
+
+in routes.py
+
+@app.route("/login", methods = ['GET','POST'])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        email = form.email.data
+        password = form.password.data
+        user = user.objects(email=email).first()
+        if user and password == user.password:
+            flash(f"{user.first_name},You are successfully logged in!", "success")
+            return redirect("/index")
+        else:
+            flash("Sorry, Something went wrong.", "danger")
+    return render_template("login.html", title="Login", form=form, login = True)
+
+to
+
+
+@app.route("/login", methods = ['GET','POST'])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        email = form.email.data
+        password = form.password.data
+        user = user.objects(email=email).first()
+        if user and user.get_password(password):
+            flash(f"{user.first_name},You are successfully logged in!", "success")
+            return redirect("/index")
+        else:
+            flash("Sorry, Something went wrong.", "danger")
+    return render_template("login.html", title="Login", form=form, login = True)
+
+
+So It's not gonna work! 
+
+[Updating registration route to interact with database]
+- validating form data
+- hashing passwword using Werkzueg library(WSGI web app lib)
+- Inserting data into the DB
+- Verifying data in the DB using Compass interface
+
+
+Let's go to routes.py and change the register function
+
+Chagned:
+
+@app.route("/register")
+def register():
+    form = RegisterForm()
+    if form.validate_on_submit():
+        user_id = User.objects.count()
+        user_id += 1
+
+        email = form.email.data
+        password = form.paswsword.data
+        first_name = form.first_name.data
+        last_name = form.last_name.data
+        
+        user = User(user_id = user_id, email=email, first_name=first_name, last_name=last_name)
+        user.set_password(password) #Hashed
+        user.save()
+        flash("You are successfully registered!","success")
+        return redirect(url_for('index'))
+    return render_template("register.html", register = True)
+    #If validation failed, return back to the register form.
+
+
+
+
+
+[Creating the course page]
+Now we have the courses page, but all the data is coming from the object that we defined in th file
+so let's query the course data from datanbase and show it
+
+- Queryign course data from DB
+- Populating the course template
+
+
+in models,
+now course_id doesn't match with DB
+so change
+
+class Course(db.Document):
+    course_id = db.StringField( max_length=10, unique=True )
+    title = db.StringField( max_length=100 )
+    description = db.StringField( max_length=100 )
+    credits = db.IntField()
+    term = db.StringField( max_length=25 )
+
+TO
+
+class Course(db.Document):
+    courseID = db.StringField( max_length=10, unique=True )
+    title = db.StringField( max_length=100 )
+    description = db.StringField( max_length=100 )
+    credits = db.IntField()
+    term = db.StringField( max_length=25 )
+
+    class Enrollment(db.Document):
+    user_id = db.IntField()
+    courseID = db.StringField(max_length=10)
+
+
+and change routes.py from
+
+@app.route("/courses/")
+@app.route("/courses/<term>")
+def courses(term="2019"):
+    return render_template("courses.html", courseData = courseData, courses = True, term=term)
+
+
+
+to 
+
+
+@app.route("/courses/")
+@app.route("/courses/<term>")
+def courses(term=None):
+    if(term == None):
+        term = "Spring 2019"
+
+    classes = Course.objects.all()
+
+    return render_template("courses.html", courseData = classes, courses = True, term=term)
+    # We should change courseData=courseData part!
+    # Now we are collecting the data from DB

@@ -1,0 +1,450 @@
+1. the Jinja template inheritance logic
+in templates>includes folder, we have 2 templates here(footer, nav)
+and in main index.html file, we can create this as a base template, and we can change this index into a child template out of base template.
+To do this, you can pick and choose some of the common features, common elements in this template, and then extract those elemnet out of base template
+
+
+2. Creating the base template
+- make a layout.html (base tmeplate)
+In index.html,
+<!DOCTYPE html>
+<html>
+<head>
+    <title>UTA - Home Page</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+          integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="static/css/main.css"/>
+</head>
+<body>
+
+<div class="container-fluid text-center top-container">
+    <img src="static/images/uta-logo-200.png">
+</div>
+<div class="container">
+    {% include "includes/nav.html" %}
+
+
+This part will be similar in every single page(login, courses, ....)
+So Let's make it as a Layout.
+Same for footer as well
+
+{% include "includes/footer.html" %}
+</body>
+</html>
+
+So when we run the index file, It is going to inherit everything inside the layout template
++ What's available here 
+
+    <div class="row">
+        <div class="col-md-12 text-center">
+            <h1>Welcome to Universal Tech Academy.</h1>
+            {% if login %}
+            <h3>Let's get started.</h3>
+            {% else %}
+            <p>Already registered? <a href= "{{url_for('login')}}">Login</a></p>
+            {% endif %}    
+        </div>
+
+
+SO what we are doing is, separte the unique part & common part
+So to do that, we are goign to create the block called "content'
+You can call it whatever you want, It typically calls content here and inside this content,
+We wanna call endign block which name is 'end block'
+<div class="container">
+    {% include "includes/nav.html" %}
+
+    {% block content %}
+    
+    {% endblock %}
+</div>
+
+So now inside here , We render the content uniquely for each page.
+Now we save this, and move to the index page to inherit this layout page.
+
+
+
+3. Using template inheritance to create child templates
+
+In index.html, write {% extends "layout.html" %}
+Ocne youdo that, the Jinja engine will know that this is going to load this base themplate called Layout
+
+and Inside of layout, Look inside the content and call block content
+now that content keyword(content) must match the content keyword in a base template
+{% block content %}
+
+And we close down here.  
+
+{%end block%}
+
+So now, as you can see, It's going to look inside the base template layout for a block content or variable "content", and then
+It's gonna inject all of these inside here
+here: index.html
+{% block content %}
+    <div class="row">
+        <div class="col-md-12 text-center">
+            <h1>Welcome to Universal Tech Academy.</h1>
+            {% if login %}
+            <h3>Let's get started.</h3>
+            {% else %}
+            <p>Already registered? <a href= "{{url_for('login')}}">Login</a></p>
+            {% endif %}    
+        </div>
+    </div>
+
+{% endblock %}
+
+to here
+here : layout.html
+    {% block content %}
+    >>here!!
+    {% endblock %}
+
+now, we can create multiple templates as well, eventually we will do that, but before we go there, 
+
+So this is the child template in the index.html,
+this : 
+{% block content %}
+    <div class="row">
+        <div class="col-md-12 text-center">
+            <h1>Welcome to Universal Tech Academy.</h1>
+            {% if login %}
+            <h3>Let's get started.</h3>
+            {% else %}
+            <p>Already registered? <a href= "{{url_for('login')}}">Login</a></p>
+            {% endif %}    
+        </div>
+    </div>
+
+{% endblock %}
+
+and we neeed to extend the layout template, which is the base template up here at the top
+top : 
+{% extends "layout.html" %}
+
+Thing is , You can not have duplicate content on the same page.
+If you do that, It's a problem cause it does not knwo where to render.
+there are other ways as well to render that if you want to do it(in the same page, render multiple  times),
+
+{{ self.content()}}
+
+You can not do that with block, but you can use self.cotent() to render multiple times
+
+It's kindof routing system for vuejs
+
+
+
+
+
+------------
+
+[Creating Child templates]
+
+In this session, we will create more child templates for our login, classes, and register pages.
+
+Inherit layout.html to every templates
+
+    {% extends "layout.html" %}
+    
+    {% block content %}
+
+    {% endblock %}
+
+-------------
+
+4. Passing data to the view using props
+- How the data can be pass from the source to the view
+
+make a variable courseData, and pass it as a parameteres in routes.py
+
+@app.route("/courses")
+def courses():
+    courseData = [{"courseID":"1111","title":"PHP 111", "description":"Intro to PHP", "credits" : "3", "term":"Fall, Spring"},
+                  {"courseID":"2222","title":"Java 1", "description":"Intro to Java Programming", "credits" : "4", "term":"Spring"}, 
+                  {"courseID":"3333","title":"Adv PHP 201", "description":"Advanced PHP Programming", "credits" : "3", "term":"Fall"},
+                  {"courseID":"4444","title":"Angular 1", "description":"Intro to Angular", "credits" : "3", "term":"Fall, Spring"},
+                  {"courseID":"5555","title":"Java 2", "description":"Advanced Java Programming", "credits" : "4", "term":"Fall"},]
+    print(courseData)
+    return render_template("courses.html", courseData = courseData)
+
+
+
+Now, It's time to change hard coding in courses.html!
+
+Let's make a loop 
+
+Change the hardcoding to this
+
+            {% for data in courseData %}
+            <tr>
+                <td scope='row'>{{ data["courseID"] }}</td> 
+                <td>{{ data["title"] }}</td>
+                <td>{{ data["description"] }}</td>
+                <td>{{ data["credits"] }}</td>
+                <td>{{ data["terms"] }}</td>
+                <td>
+                    <button>Enroll</button>
+                </td>
+            </tr>
+            {% endfor %}
+in course.html
+Now we have piece of data from Json format, and we used a for loop to generate the whole data here and display it to the browser
+
+and add class="nav-link {% if index %} active {% end if %}"
+to nav.html
+
+
+- Highlight the acitve menu item
+Now we want to highlight the menu here. 
+So for example, If I hover my cursor on  the menu classes, It highlight this classes here
+THere are couple of ways to do this, but the easier way for is to just basically You can pass the flag or another property to this index.html file
+In routes.py, Put another parameter with variable = True for all functions
+
+e.g.
+@app.route("/home")
+def index():
+    return render_template("index.html")
+
+to
+
+@app.route("/home")
+def index():
+    return render_template("index.html", index = True)
+
+
+
+
+- Using For directive to look thourgh a dictionary of items
+- and with for directive, we will building the course table with Json data
+
+
+------------------------------------------------------------
+5. Accessign data via the request and response objects
+
+We will be looking at two global objects, request and response
+before we do that, we should look at
+- URL variables
+- HTTP Methods (GET, POST)
+- The global objects : REqust and response
+- Requests and response are all JSON API format
+
+<Request Objects>
+How to access query string (get)
+> request.args.get("field name")
+> request.args["field name"]
+
+How to access form data (POST)
+> request.form.get("field_name")
+> request.form["field_name"]
+ 
+
+<Respoonse Objects>
+- Usually used for creating APIs
+- Flask has the class of response that gives you six parameters
+
+Most used parameters : response, mimetype, content_type
+class flask.Response(
+    response = None,
+    status = None,
+    headers = None,
+    mimetype = None,
+    content_type = None,
+    direct_passthrough = False
+)
+
+<URL variables>
+SO when you go to index page, classes page, ... 
+you can pass osme data through variables
+FOr eg in URL, 127.0.0.1:5000/courses/1111
+It makes you to query data and get the data and pull this id
+
+In routes.py
+we have @app.route("/courses")
+
+/courses > make the link more unique
+/courses/ > make it like a folder. indexing this page twice
+So we will change
+@app.route("/courses")
+def courses():
+    courseData = [{"courseID":"1111","title":"PHP 111", "description":"Intro to PHP", "credits" : "3", "term":"Fall, Spring"},
+                  {"courseID":"2222","title":"Java 1", "description":"Intro to Java Programming", "credits" : "4", "term":"Spring"}, 
+                  {"courseID":"3333","title":"Adv PHP 201", "description":"Advanced PHP Programming", "credits" : "3", "term":"Fall"},
+                  {"courseID":"4444","title":"Angular 1", "description":"Intro to Angular", "credits" : "3", "term":"Fall, Spring"},
+                  {"courseID":"5555","title":"Java 2", "description":"Advanced Java Programming", "credits" : "4", "term":"Fall"}]
+    print(courseData)
+    return render_template("courses.html", courseData = courseData, courses = True)
+
+into 
+@app.route("/courses/")
+@app.route("/courses/<term>")
+def courses(term="2019"):
+    courseData = [{"courseID":"1111","title":"PHP 111", "description":"Intro to PHP", "credits" : "3", "term":"Fall, Spring"},
+                  {"courseID":"2222","title":"Java 1", "description":"Intro to Java Programming", "credits" : "4", "term":"Spring"}, 
+                  {"courseID":"3333","title":"Adv PHP 201", "description":"Advanced PHP Programming", "credits" : "3", "term":"Fall"},
+                  {"courseID":"4444","title":"Angular 1", "description":"Intro to Angular", "credits" : "3", "term":"Fall, Spring"},
+                  {"courseID":"5555","title":"Java 2", "description":"Advanced Java Programming", "credits" : "4", "term":"Fall"}]
+    print(courseData)
+    return render_template("courses.html", courseData = courseData, courses = True, term=term)
+
+//term="2019" means 2019 is a default of term
+// in return, add term=term to pass the variable to template
+
+
+in courses.html
+Change
+    <h3>Term: Spring 2019</h3>
+
+to
+    <h3>Term: Spring {{ term }}</h3>
+
+<Creating the Enrollment form & template & route using GET method>
+- This is a little bit fricky in flask because usually, POST and GET and other methods are avaiable by default by many other programming languages,
+but in Flask, you have to allow that function to use it
+
+So what we will implement is, 
+1. go to courses page
+2. click the enroll button
+3. Enroll me to that course
+
+- in courses.html
+change this to
+            {% for data in courseData %}
+            <tr>
+                <td scope='row'>{{ data["courseID"] }}</td> 
+                <td>{{ data["title"] }}</td>
+                <td>{{ data["description"] }}</td>
+                <td>{{ data["credits"] }}</td>
+                <td>{{ data["terms"] }}</td>
+                <td>
+                    <button>Enroll</button>
+                </td>
+            </tr>
+this
+            {% for data in courseData %}
+            <tr>
+                <td scope='row'>{{ data["courseID"] }}</td> 
+                <td>{{ data["title"] }}</td>
+                <td>{{ data["description"] }}</td>
+                <td>{{ data["credits"] }}</td>
+                <td>{{ data["terms"] }}</td>
+                <td>
+                    <form action="{{url_for('enrollment')}}" method="GET"></form>
+                        <input type = "hidden" name="courseID" value="{{data['courseID]}}>
+                        <input type = "hidden" name="title" value="{{data['title']}}>
+                        <input type = "hidden" name="term" value="{{data['term']}}>
+                    <button>Enroll</button>
+                    </form>
+                </td>
+            </tr>
+
+// <form action="{{url_for('enrollment')}}" method="GET"></form>
+Let's add some action for the Enroll button.
+
+//
+                        <input type = "hidden" name="courseID" value="{{data['courseID]}}>
+                        <input type = "hidden" name="title" value="{{data['title']}}>
+                        <input type = "hidden" name="term" value="{{data['term']}}>
+
+We need to grab course ID and course title for now
+hidden : We don't wnat to show that to user
+and we will bring data over template.
+
+- Now Let's make the enrollment template
+
+{% block content %}
+    <div class="row">
+        <div class="col-md-12 text-center">
+            <p>course ID : {{  data.id  }}</p>
+            <p>course Title : {{  data.title  }}</p>
+            <p>course Term : {{  data.term  }}</p>
+        </div>
+    </div>
+
+
+//data.id > data will be use to pass data to this template from source
+
+
+- Now we need to create the function in routes.py
+
+@app.route("/enrollment")
+def enrollment():
+    id = request.args.get('courseID')
+    title = request.args.get('title')
+    term = request.args.get('term')    
+    return render_template("enrollment.html", enrollment = True, data={"id":id, "title":title, "term": term})
+
+
+//this means, from enroolment.html, we will pass the data using GET method to this function
+// in ID = request.. part, 
+you can use the fuction or array/list here 
+there is the difference between two as well.
+why? because get is like an optional
+option 1) request.args.get("field name")
+If you put a get fuctnion and if you get nothing with the token, You will get a message saying "none"
+It doesn't crash your site.
+
+
+option 2) request.args["field name"]
+It is assuming you will guarantee that that variable has to be there.
+If it's not, It will crash the site
+
+So this wil pass over to template and we need to put in objct.
+data={"id":id, "title":title, "term": term}
+
+
+<Updating the enrollment using POST method>
+Let's change the method from GET to POST
+- In courses.html, 
+
+Change
+                    <form action="{{url_for('enrollment')}}" method="GET">
+                        <input type = "hidden" name="courseID" value="{{data['courseID']}}">
+                        <input type = "hidden" name="title" value="{{data['title']}}">
+                        <input type = "hidden" name="term" value="{{data['term']}}">
+                    <button>Enroll</button>
+                    </form>
+to
+
+                    <form action="{{url_for('enrollment')}}" method="POST">
+                        <input type = "hidden" name="courseID" value="{{data['courseID']}}">
+                        <inp ut type = "hidden" name="title" value="{{data['title']}}">
+                        <input type = "hidden" name="term" value="{{data['term']}}">
+                    <button>Enroll</button>
+                    </form>
+
+- in routes.py
+
+@app.route("/enrollment", methods=["GET", "POST"])
+def enrollment():
+    id = ""
+    title = ""
+    term = ""
+    if (request.method == "POST"):
+        id = request.form.get('courseID')
+        print(request.args)
+        title = request.form.get('title')
+        term = request.form.get('term')   
+    else:
+        id = request.args.get('courseID')
+        print(request.args)
+        title = request.args.get('title')
+        term = request.args.get('term')    
+    return render_template("enrollment.html", enrollment = True, data={"id":id, "title":title, "term": term})
+
+
+//methods = ["]
+Let's specify the routing pattern in routes.py to encode the method of "POST"
+
+and change the args > form cause POST use form
+
+
+---------
+
+Let's create the api & url /api , which pass some data to requester back
+
+- in routes.py
+Move courseData from local variable to global variable
+
+add function of /api
+
+and return Response object with some parameters that we need
+
